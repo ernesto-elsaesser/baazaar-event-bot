@@ -50,7 +50,7 @@ def handle(action, tokenId, price_in_wei):
     # see https://github.com/aavegotchi/aavegotchi-realm-diamond/blob/master/contracts/facets/RealmFacet.sol#L55
     info = realm_contract.functions.getParcelInfo(tokenId).call()
     x_coord = info[3]
-    y_coord = info[5]
+    y_coord = info[4]
     size_id = info[5]
     district = info[6]
     boosts = info[7]
