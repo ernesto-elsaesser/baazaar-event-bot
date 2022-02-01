@@ -33,28 +33,31 @@ add_filter = add_event.createFilter(fromBlock='latest', argument_filters=realm_f
 exec_filter = exec_event.createFilter(fromBlock='latest', argument_filters=realm_filter)
 
 sizes = ['humble', 'reasonable', 'spacious vertical', 'spacious horizontal', 'partner']
-
-# D1 inner wall
-min_x = 3875
-max_x = 5650
-min_y = 2400
-max_y = 3900
+within_inner_walls = lambda x, y: 3875 < x < 5650 and 2400 < y < 3900
 
 
-def handle(action, listingId, tokenId, price_in_wei):
+def handle(action, event_args):
 
+    listing_id = event_args.listingId
+    token_id = event_args.erc721TokenId
+
+    if action == 'listed':
+        # in ERC721ListingAdd events, the price
+        # is stored in the time field - see
+        # https://github.com/aavegotchi/aavegotchi-contracts/blob/master/contracts/Aavegotchi/facets/ERC721MarketplaceFacet.sol#L259
+        price_in_wei = event_args.time
+    else:
+        price_in_wei = event_args.priceInWei
+    
     price = int(price_in_wei / 1e18)
 
     # see https://github.com/aavegotchi/aavegotchi-realm-diamond/blob/master/contracts/facets/RealmFacet.sol#L55
     info = realm_contract.functions.getParcelInfo(tokenId).call()
-    x_coord = info[3]
-    y_coord = info[4]
-    size = sizes[info[5]]
     district = 'D' + str(info[6])
+    if within_inner_walls(info[3], info[4]):
+        district += " [INNER WALL]"
+    size = sizes[info[5]]
     boosts = info[7]
-
-    if min_x < x_coord < max_x and min_y < y_coord < max_y:
-        district += " !INNER WALL!"
 
     url = "https://aavegotchi.com/baazaar/erc721/" + listingId
     timestamp = datetime.datetime.now().isoformat()
@@ -67,13 +70,9 @@ print('listening ...')
 while True:
 
     for event in add_filter.get_new_entries():
-        # in ERC721ListingAdd events, time field is used for price_in_wei 
-        # see https://github.com/aavegotchi/aavegotchi-contracts/blob/master/contracts/Aavegotchi/facets/ERC721MarketplaceFacet.sol#L259
-        handle('listed', event.args.listingId,
-                event.args.erc721TokenId, event.args.time)
+        handle('listed', event.args)
 
     for event in exec_filter.get_new_entries():
-        handle('sold', event.args.listingId,
-                event.args.erc721TokenId, event.args.priceInWei)
+        handle('sold', event.args)
 
     time.sleep(60)
