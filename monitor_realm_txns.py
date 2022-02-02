@@ -52,16 +52,16 @@ def handle(action, event_args):
     price = int(price_in_wei / 1e18)
 
     # see https://github.com/aavegotchi/aavegotchi-realm-diamond/blob/master/contracts/facets/RealmFacet.sol#L55
-    info = realm_contract.functions.getParcelInfo(tokenId).call()
+    info = realm_contract.functions.getParcelInfo(token_id).call()
     district = 'D' + str(info[6])
     if within_inner_walls(info[3], info[4]):
         district += " [INNER WALL]"
     size = sizes[info[5]]
     boosts = info[7]
 
-    url = "https://aavegotchi.com/baazaar/erc721/" + listingId
+    url = f"https://aavegotchi.com/baazaar/erc721/{listing_id}"
     timestamp = datetime.datetime.now().isoformat()
-    msg = f"{timestamp} D{district} {size} {boosts} {action} for {price} GHST - {url}"
+    msg = f"{timestamp} {district} {size} {boosts} {action} for {price} GHST - {url}"
     print(msg)
 
 
